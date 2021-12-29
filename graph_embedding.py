@@ -1,15 +1,22 @@
 from clearml import Task, StorageManager, Dataset
 import argparse
 import json
+import ipdb
+import os
 
 #Task.add_requirements('transformers', package_version='4.2.0')
-#task = Task.init(project_name='gdelt-embeddings', task_name='training', output_uri="s3://experiment-logging/storage/")
-#task.set_base_docker("nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04")
+task = Task.init(project_name='gdelt-embeddings', task_name='graph-training', output_uri="s3://experiment-logging/storage/")
+task.set_base_docker("nvidia/cuda:10.2-cudnn7-devel-ubuntu18.04")
 
 #docker_setup_bash_script=['git clone https://github.com/thunlp/OpenKE', 'cd OpenKE/openke', 'bash make.sh']
 #task.connect(args)
-#task.execute_remotely(queue_name="compute2", exit_process=True)
-#clearlogger = task.get_logger()
+task.execute_remotely(queue_name="compute2", exit_process=True)
+clearlogger = task.get_logger()
+
+dataset_obj = Dataset.get(dataset_project="datasets/gdelt", dataset_name="gdelt_2019", only_published=True)
+dataset_path = dataset_obj.get_local_copy()
+
+print(list(os.walk(dataset_path)))
 
 import openke
 from openke.config import Trainer, Tester
@@ -20,7 +27,7 @@ from openke.data import TrainDataLoader, TestDataLoader
 
 # dataloader for training
 train_dataloader = TrainDataLoader(
-	in_path = "./data/openke_format/", 
+	in_path = dataset_path+"/", 
 	nbatches = 1,
 	threads = 4, 
 	sampling_mode = "normal", 
@@ -30,7 +37,7 @@ train_dataloader = TrainDataLoader(
 	neg_rel = 0)
 
 # dataloader for test
-#test_dataloader = TestDataLoader("./data/openke_format/")
+#test_dataloader = TestDataLoader(dataset_path)
 
 # define the model
 transe = TransE(
