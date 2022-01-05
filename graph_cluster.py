@@ -10,8 +10,10 @@ from dgl.data import dgl_dataset
 from openke.config import Trainer, Tester
 from openke.module.model import TransE
 
+
+remote_path = "s3://experiment-logging"
 task = Task.init(project_name='gdelt-embeddings', task_name='graph-clustering',
-                 output_uri="s3://experiment-logging/storage/")
+                 output_uri=os.path.join(remote_path, "storage"))
 task.set_base_docker("nvidia/cuda:11.4.0-cudnn8-devel-ubuntu20.04")
 task.execute_remotely(queue_name="compute2", exit_process=True)
 
@@ -36,7 +38,10 @@ transe = TransE(
     norm_flag=True
     )
 
-transe.load_checkpoint('./checkpoint/transe.ckpt')
+weights_path = './checkpoint/transe.ckpt'
+weights_path = StorageManager.get_local_copy(remote_url=os.path.join(remote_path, "manual_store/transe.ckpt"))
+transe.load_checkpoint(weights_path)
+
 #print(transe.ent_embeddings.weight.size())
 #print(transe.rel_embeddings.weight.size())
 #print(train_data)

@@ -17,7 +17,6 @@ task = Task.init(project_name='gdelt-embeddings', task_name='graph-training',
                  output_uri="s3://experiment-logging/storage/")
 #task.set_base_docker("nvidia/cuda:11.4.0-cudnn8-devel-ubuntu20.04", docker_setup_bash_script=['git clone https://github.com/thunlp/OpenKE','cd OpenKE/openke', 'rm -r release', 'bash make.sh'])
 task.set_base_docker("nvidia/cuda:11.4.0-cudnn8-devel-ubuntu20.04")
-
 # task.connect(args)
 task.execute_remotely(queue_name="compute2", exit_process=True)
 #clearlogger = task.get_logger()
@@ -27,15 +26,12 @@ dataset_obj = Dataset.get(dataset_project="datasets/gdelt",
 dataset_path = dataset_obj.get_local_copy()
 print(list(os.walk(dataset_path)))
 
-
 def read_file(dataset_path: str, file_name: str):
     data = pd.read_csv('{}/{}'.format(dataset_path, file_name),
                        sep="\t", header=None, dtype=str)[1:].reset_index(drop=True)
     return data
 
-
 train_data = read_file(dataset_path, "train2id.txt")
-
 
 # dataloader for training
 train_dataloader = TrainDataLoader(
@@ -75,6 +71,5 @@ trainer.run()
 
 Path('./checkpoint/').mkdir(parents=True, exist_ok=True)
 transe.save_checkpoint('./checkpoint/transe.ckpt')
-
 task.upload_artifact(name='transe.ckpt', artifact_object='./checkpoint/transe.ckpt')
 
