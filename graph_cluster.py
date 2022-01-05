@@ -10,6 +10,11 @@ from dgl.data import dgl_dataset
 from openke.config import Trainer, Tester
 from openke.module.model import TransE
 
+task = Task.init(project_name='gdelt-embeddings', task_name='graph-clustering',
+                 output_uri="s3://experiment-logging/storage/")
+task.set_base_docker("nvidia/cuda:11.4.0-cudnn8-devel-ubuntu20.04")
+task.execute_remotely(queue_name="compute2", exit_process=True)
+
 dataset_obj = Dataset.get(dataset_project="datasets/gdelt", dataset_name="gdelt_openke_format_w_extras", only_published=True)
 dataset_path = dataset_obj.get_local_copy()
 print(list(os.walk(dataset_path)))
@@ -20,18 +25,18 @@ def read_file(dataset_path:str, file_name:str):
 
 entity_dict = read_file(dataset_path, "entity2id.txt")
 relation_dict = read_file(dataset_path, "relation2id.txt")
-train_data = read_file(dataset_path, "train2id.txt")[:250000]
+train_data = read_file(dataset_path, "train2id.txt")
+train_data[5] = train_data[4].str[:6]
 
 transe = TransE(
     ent_tot=11384,
     rel_tot=253,
-    dim=50,# embedding dim
+    dim=200,# embedding dim
     p_norm=1,
     norm_flag=True
     )
 
 transe.load_checkpoint('./checkpoint/transe.ckpt')
-
 #print(transe.ent_embeddings.weight.size())
 #print(transe.rel_embeddings.weight.size())
 #print(train_data)
@@ -73,10 +78,6 @@ def get_all_embeddings(interval_list:list):
 #     return results 
 # =============================================================================
 
-train_data[5] = train_data[4].str[:6]
-unique_dates = pd.Series(train_data[5].unique()).astype(int).sort_values(ascending=True)
-temporal_list = get_all_embeddings(unique_dates)
-
 # =============================================================================
 # temporal_dict = {}
 # for idx, date in enumerate(unique_dates):
@@ -88,5 +89,8 @@ temporal_list = get_all_embeddings(unique_dates)
 #     temporal_dict[date] = doc_embedding_dict
 # =============================================================================
 
+unique_dates = pd.Series(train_data[5].unique()).astype(int).sort_values(ascending=True)
+temporal_list = get_all_embeddings(unique_dates)
 
+task.upload_artifact(name='temporal_list_by_idx', artifact_object=temporal_list)
 
