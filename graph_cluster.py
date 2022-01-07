@@ -6,7 +6,7 @@ import numpy as np
 import tqdm
 import multiprocessing
 
-from dgl.data import dgl_dataset
+#from dgl.data import dgl_dataset
 from openke.config import Trainer, Tester
 from openke.module.model import TransE
 
