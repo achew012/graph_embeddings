@@ -57,8 +57,7 @@ def process_text(url:str):
 cluster_id = "153"
 cluster_json_path = "/mnt/projects/AI_Projects/gdelt_retrieval/data/cluster_data.json"
 
-def get_corpus_from_cluster(cluster_id:str, cluster_json_path:str)->pd.DataFrame:
-    clusters = json.load(open(cluster_json_path))
+def get_corpus_from_cluster(cluster_id:str, cluster_json_path:str, clusters)->pd.DataFrame:
     cluster_ids_size = {cluster_id: len(clusters[cluster_id]["id_list"]) for cluster_id in clusters.keys()}
     largest_cluster = pd.DataFrame(clusters[cluster_id]["id_list"])
     largest_cluster_url = largest_cluster.merge(document, how="left", left_on=0, right_on=0)
@@ -74,12 +73,15 @@ def plot_wordcloud(corpus:str, cluster_id:str)->None:
     plt.close()
     
 
-def run(cluster_id, cluster_json_path):
-    largest_cluster_url, cluster_ids_size = get_corpus_from_cluster(cluster_id, cluster_json_path)
+def run(cluster_id, cluster_json_path, clusters):
+    largest_cluster_url, cluster_ids_size = get_corpus_from_cluster(cluster_id, cluster_json_path, clusters)
     corpus = " ".join(largest_cluster_url[2].tolist())
     plot_wordcloud(corpus, cluster_id)
 
-run("191", cluster_json_path)
+
+clusters = json.load(open(cluster_json_path))
+for key in clusters.keys():
+    run(key, cluster_json_path, clusters)
 
 
 #from sklearn.decomposition import LatentDirichletAllocation as lda
