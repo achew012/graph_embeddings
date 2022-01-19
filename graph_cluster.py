@@ -1,5 +1,10 @@
 from clearml import Task, StorageManager, Dataset
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-d", "--date", help="increase output verbosity")
+args = parser.parse_args()
+
 import os
 import pandas as pd
 import numpy as np
@@ -8,15 +13,15 @@ import multiprocessing
 
 from openke.config import Trainer, Tester
 from openke.module.model import TransE
-import ipdb
 import torch
+#import ipdb
+
 
 remote_path = "s3://experiment-logging"
-task = Task.init(project_name='gdelt-embeddings', task_name='graph-clustering',
+task = Task.init(project_name='gdelt-embeddings', task_name='graph-document-embeddings-{}'.format(args.date),
                  output_uri=os.path.join(remote_path, "storage"))
 task.set_base_docker("nvidia/cuda:11.4.0-cudnn8-devel-ubuntu20.04")
-#task.execute_remotely(queue_name="compute2", exit_process=True)
-
+task.execute_remotely(queue_name="compute2", exit_process=True)
 
 dataset_obj = Dataset.get(dataset_project="datasets/gdelt", dataset_name="gdelt_openke_format_w_extras", only_published=True)
 dataset_path = dataset_obj.get_local_copy()
@@ -86,13 +91,15 @@ def process_interval(date):
     doc_embedding_dict = get_document_embeddings_from_interval(unique_urls_per_interval, triples_per_temporal_interval)
     return doc_embedding_dict
 
-def get_all_embeddings(interval_list:list):
-     return [process_interval(date) for date in interval_list if date<202101]
+# def get_all_embeddings(interval_list:list):
+#     return [process_interval(date) for date in interval_list if date<202101]
 
 unique_dates = pd.Series(train_data[5].unique()).astype(int).sort_values(ascending=True)
-temporal_list = get_all_embeddings(unique_dates)
+#temporal_list = get_all_embeddings(unique_dates)
+# for date in unique_dates:
+#     if date<202101:
+#         process_interval(date)
 
-ipdb.set_trace()
-
+temporal_list = process_interval(args.date)
 task.upload_artifact(name='temporal_list_by_idx', artifact_object=temporal_list)
 
